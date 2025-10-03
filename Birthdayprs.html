@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happy Birthday Purvashi!</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    .heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #ff4d6d;
+      transform: rotate(45deg);
+      animation: float 4s infinite;
+    }
+    .heart::before, .heart::after {
+      content: '';
+      width: 20px;
+      height: 20px;
+      background: #ff4d6d;
+      border-radius: 50%;
+      position: absolute;
+    }
+    .heart::before {
+      top: -10px;
+      left: 0;
+    }
+    .heart::after {
+      left: 10px;
+      top: 0;
+    }
+    @keyframes float {
+      0% { transform: translateY(0) rotate(45deg); opacity: 1; }
+      100% { transform: translateY(-100vh) rotate(45deg); opacity: 0; }
+    }
+
+    /* Game Styles */
+    #game-container {
+      display: none;
+      background: linear-gradient(135deg, #ff9a9e, #fecfef);
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      max-width: 300px;
+      margin: 20px auto;
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      background: #f3f4f6;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .cell:hover {
+      background: #e5e7eb;
+      transform: scale(1.05);
+    }
+    .cell.revealed {
+      background: #fef3c7;
+      cursor: default;
+    }
+    .cell.matched {
+      background: #10b981;
+      color: white;
+      cursor: default;
+    }
+    .cell.wrong {
+      background: #ef4444;
+      color: white;
+      animation: shake 0.5s ease-in-out;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    #reward {
+      display: none;
+      font-size: 18px;
+      color: #10b981;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: 20px auto;
+    }
+
+    /* Quiz Styles */
+    #quiz-container {
+      display: none;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+    .quiz-question {
+      font-size: 20px;
+      margin: 20px 0;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .quiz-option {
+      display: block;
+      width: 80%;
+      margin: 10px auto;
+      padding: 10px;
+      background: #f0f9ff;
+      border: 2px solid #0ea5e9;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .quiz-option:hover {
+      background: #0ea5e9;
+      color: white;
+      transform: translateY(-2px);
+    }
+    .quiz-option.correct {
+      background: #10b981;
+      color: white;
+    }
+    .quiz-option.wrong {
+      background: #ef4444;
+      color: white;
+    }
+    #quiz-progress {
+      font-size: 18px;
+      margin: 10px 0;
+      color: #374151;
+    }
+    #next-question-btn {
+      background: #8b5cf6;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px;
+      display: none;
+    }
+    #quiz-complete {
+      display: none;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin: 20px auto;
+    }
+
+    /* Wishes Styles */
+    #wishes-container {
+      display: none;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+    .wishes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 20px auto;
+    }
+    .wish-card {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      transform: translateY(50px);
+      opacity: 0;
+      animation: slideUp 0.8s ease forwards;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .wish-card:hover {
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    }
+    .wish-card:nth-child(odd) { animation-delay: 0.1s; }
+    .wish-card:nth-child(even) { animation-delay: 0.2s; }
+    .language-name {
+      font-weight: bold;
+      color: #4f46e5;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    .wish-text {
+      font-size: 16px;
+      color: #1f2937;
+      line-height: 1.5;
+      text-align: center;
+    }
+    @keyframes slideUp {
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .sparkle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: gold;
+      border-radius: 50%;
+      animation: sparkleAnim 2s infinite;
+    }
+    @keyframes sparkleAnim {
+      0%, 100% { opacity: 0; transform: scale(0); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center">
+  <div id="main-card" class="bg-white p-8 rounded-2xl shadow-2xl max-w-md text-center transform transition-all duration-500 hover:scale-105">
+    <h1 class="text-4xl font-bold text-pink-600 mb-4">Happy Birthday, Purvashi! 🎉</h1>
+    <p class="text-lg text-gray-700 mb-6">
+      HIi Purvashi(Doreamon) ketan This Side , my VIP human! 🎈 Congratulations on surviving another trip around the sun, you absolute legend! 
+      You're the best friend who drags me out of my dramatic meltdowns with your *oh-so-wise* advice (seriously, are you secretly a guru?). 
+      Through my worst days, you're like a superhero without a cape—just pure, annoying perfection. 
+      Officially the world's best person (don't let it go to your head), here's to you lighting up the universe with that smug, shiny smile! 
+      Let's party like mad ones..! 🥳
+    </p>
+    <button 
+      id="party-btn"
+      class="bg-pink-500 text-white px-6 py-3 rounded-full hover:bg-pink-600 transition-colors"
+    >
+      Unleash the Party!
+    </button>
+  </div>
+
+  <div id="game-container">
+    <h2 class="text-3xl font-bold text-pink-600 mb-4">🎮 Birthday Memory Game!</h2>
+    <p class="text-lg text-gray-700 mb-6">Match all the birthday pairs to unlock your special reward! 🎁</p>
+    <div id="game-board"></div>
+    <p id="game-status" class="text-xl font-semibold mb-4"></p>
+    <div id="reward"></div>
+  </div>
+
+  <div id="quiz-container">
+    <h2 class="text-3xl font-bold text-purple-600 mb-4">🧠 Birthday Quiz Adventure!</h2>
+    <p class="text-lg text-gray-700 mb-6">Answer these fun questions to unlock multilingual magic! Easy peasy! 🌟</p>
+    <div id="quiz-progress"></div>
+    <div id="quiz-question" class="quiz-question"></div>
+    <div id="quiz-options"></div>
+    <button id="next-question-btn" onclick="nextQuestion()">Next Question!</button>
+    <div id="quiz-complete"></div>
+  </div>
+
+  <div id="wishes-container">
+    <h2 class="text-4xl font-bold text-white mb-6">🌍 Global Birthday Wishes for Purvashi! 🎈</h2>
+    <p class="text-xl text-white mb-8">Wishes from around the world in 21 languages! Click to sparkle! ✨</p>
+    <div class="wishes-grid" id="wishes-grid"></div>
+  </div>
+
+  <script>
+    let gameBoard = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    const totalPairs = 6; // 12 cards, 6 pairs
+
+    // Quiz Data
+    const quizQuestions = [
+      {
+        question: "What's Purvashi's favorite snack? (Hint: Doraemon vibes!)",
+        options: ["🍙 Sushi", "🍪 Cookies", "🍫 Chocolate", "🍰 Cake"],
+        correct: 3 // Cake
+      },
+      {
+        question: "How does Purvashi save the day? Like a...",
+        options: ["🦸‍♀️ Superhero", "🧙‍♀️ Guru", "🤖 Robot", "👑 Queen"],
+        correct: 1 // Guru
+      },
+      {
+        question: "Purvashi's smile lights up the...?",
+        options: ["🌍 World", "🚀 Universe", "🏠 Home", "🎉 Party"],
+        correct: 1 // Universe
+      },
+      {
+        question: "Best way to celebrate with Purvashi?",
+        options: ["🎊 Party like mad!", "😴 Sleep", "📚 Study", "🏃 Run"],
+        correct: 0 // Party
+      },
+      {
+        question: "Purvashi is the world's best...?",
+        options: ["👫 Friend", "🍕 Pizza", "📱 Phone", "🚗 Car"],
+        correct: 0 // Friend
+      }
+    ];
+    let currentQuestion = 0;
+    let quizScore = 0;
+
+    const multilingualWishes = [
+      { lang: "Marathi (मराठी)", wish: "वाढदिवसाच्या हार्दिक शुभेच्छा पुर्वशी।" },
+      { lang: "Maithili (मैथिली)", wish: "जन्म दिन के हार्दिक शुभकामना पुर्वशी।" },
+      { lang: "Hindi (हिंदी)", wish: "जन्मदिन की हार्दिक शुभकामनाएं पुर्वशी।" },
+      { lang: "English", wish: "Warm birthday wishes, Purvashi." },
+      { lang: "Bengali (বাংলা)", wish: "জন্মদিনের অনেক অনেক শুভেচ্ছা পুর্বশী।" },
+      { lang: "Gujarati (ગુજરાતી)", wish: "જન્મદિવસની હાર્દિક શુભકામનાઓ પુર્વશી।" },
+      { lang: "Kannada (ಕನ್ನಡ)", wish: "ಹುಟ್ಟುಹಬ್ಬದ ಹಾರ್ದಿಕ ಶುಭಾಷಯಗಳು ಪುರ್ವಶಿ।" },
+      { lang: "Malayalam (മലയാളം)", wish: "പിറന്നാള് വാഴ്ത്തുകള് പുര്വശി।" },
+      { lang: "Tamil (தமிழ்)", wish: "பிறந்த நாள் வாழ்த்துக்கள் புர்வஷி।" },
+      { lang: "Telugu (తెలుగు)", wish: "పుట్టినరోజు శుభాకాంక్షలు పుర్వశి।" },
+      { lang: "Punjabi (ਪੰਜਾਬੀ)", wish: "ਜਨਮ ਦਿਨ ਦੀਆਂ ਹਾਰਦਿਕ ਸ਼ੁਭਕਾਮਨਾਵਾਂ ਪੁਰਵਸ਼ੀ।" },
+      { lang: "Odia (ଓଡିଆ)", wish: "ଜନ୍ମଦିନର ହାର୍ଦିਕ ଶୁଭେଛା ପୁର୍ଵଶୀ।" },
+      { lang: "Assamese (অসমীয়া)", wish: "জন্মদিনৰ হাৰ্দিক শুভেচ্ছা পুৰ্বশী।" },
+      { lang: "Urdu (اُردُو)", wish: "سالگرہ پر دلی مبارکباد پوروشی۔" },
+      { lang: "Kashmiri (कॉशुर / كٲشُر)", wish: "वॅदह दिवस मुबारक पुर्वशी / وَدہٕ دۄہ مبارک پوروَشی" },
+      { lang: "Sindhi (सिन्धी / سنڌي)", wish: "سالگرھ जी ڀليڪار पुर्वशी" },
+      { lang: "Nepali (नेपाली)", wish: "जन्मदिनको हार्दिक शुभकामना पुर्वशी।" },
+      { lang: "Konkani (कोंकणी)", wish: "वाडदिसाच्यो हार्दीक शुभेच्छो पुर्वशी।" },
+      { lang: "Bhojpuri (भोजपुरी)", wish: "जनम दिन के हार्दिक बधाई पुर्वशी।" },
+      { lang: "Dogri (डोगरी)", wish: "जन्म दिन दी हार्दिक बधाई पुर्वशी।" },
+      { lang: "Sanskrit (संस्कृतम्)", wish: "जन्मदिनस्य हार्दिकाः शुभाकाङ्क्षाः पुर्वशी।" }
+    ];
+
+    function launchConfetti() {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#ff4d6d', '#4dabf7', '#f7d794']
+      });
+    }
+
+    function createHearts() {
+      setInterval(() => {
+        const heart = document.createElement('div');
+        heart.className = 'heart';
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.animationDuration = Math.random() * 2 + 3 + 's';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 4000);
+      }, 300);
+    }
+
+    function initGame() {
+      gameBoard = [];
+      flippedCards = [];
+      matchedPairs = 0;
+      const symbols = ['🎂', '🎉', '🎈', '🎁', '🥳', '🍰', '🎂', '🎉', '🎈', '🎁', '🥳', '🍰'];
+      symbols.sort(() => Math.random() - 0.5); // Shuffle
+      gameBoard = symbols;
+      
+      const board = document.getElementById('game-board');
+      board.innerHTML = '';
+      gameBoard.forEach((symbol, index) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = index;
+        cell.textContent = '?';
+        cell.addEventListener('click', handleCardClick);
+        board.appendChild(cell);
+      });
+      
+      document.getElementById('game-status').textContent = '';
+      document.getElementById('reward').style.display = 'none';
+    }
+
+    function handleCardClick(event) {
+      const cell = event.target;
+      const index = parseInt(cell.dataset.index);
+      
+      if (flippedCards.length < 2 && !cell.classList.contains('revealed')) {
+        cell.textContent = gameBoard[index];
+        cell.classList.add('revealed');
+        flippedCards.push({ cell, index });
+        
+        if (flippedCards.length === 2) {
+          setTimeout(checkMatch, 500);
+        }
+      }
+    }
+
+    function checkMatch() {
+      const [first, second] = flippedCards;
+      if (gameBoard[first.index] === gameBoard[second.index]) {
+        first.cell.classList.add('matched');
+        second.cell.classList.add('matched');
+        matchedPairs++;
+        if (matchedPairs === totalPairs) {
+          setTimeout(showReward, 1000);
+        }
+      } else {
+        first.cell.textContent = '?';
+        first.cell.classList.remove('revealed');
+        second.cell.textContent = '?';
+        second.cell.classList.remove('revealed');
+        first.cell.classList.add('wrong');
+        second.cell.classList.add('wrong');
+        setTimeout(() => {
+          first.cell.classList.remove('wrong');
+          second.cell.classList.remove('wrong');
+        }, 500);
+      }
+      flippedCards = [];
+    }
+
+    function showReward() {
+      launchConfetti();
+      document.getElementById('game-status').textContent = '🎉 You Win! 🎉';
+      document.getElementById('reward').innerHTML = `
+        <h3 class="text-2xl font-bold text-green-600 mb-4">Your Birthday Reward! 🎁</h3>
+        <p class="text-lg mb-4">Wah Doreamon mast khedta yete tul thodsa dimag laun hi khedat jaa chal party kadhi detes sang lavkar,mazyakadun bharpur shubhecha tula ani bharpur shubhecha ani most important bharpur shubhecha mast khush ryt jaa be happy and joyful always</p>
+        <button id="next-game-btn" class="bg-purple-500 text-white px-6 py-3 rounded-full hover:bg-purple-600 transition-colors mt-4" onclick="startQuiz()">Play Next Game! 🚀</button>
+      `;
+      document.getElementById('reward').style.display = 'block';
+    }
+
+    // Quiz Functions
+    function startQuiz() {
+      currentQuestion = 0;
+      quizScore = 0;
+      document.getElementById('game-container').style.display = 'none';
+      document.getElementById('quiz-container').style.display = 'block';
+      showQuestion();
+    }
+
+    function showQuestion() {
+      if (currentQuestion >= quizQuestions.length) {
+        endQuiz();
+        return;
+      }
+      const q = quizQuestions[currentQuestion];
+      document.getElementById('quiz-progress').textContent = `Question ${currentQuestion + 1} of ${quizQuestions.length} | Score: ${quizScore}`;
+      document.getElementById('quiz-question').textContent = q.question;
+      const optionsDiv = document.getElementById('quiz-options');
+      optionsDiv.innerHTML = '';
+      q.options.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-option';
+        btn.textContent = option;
+        btn.onclick = () => selectOption(index, q.correct);
+        optionsDiv.appendChild(btn);
+      });
+      document.getElementById('next-question-btn').style.display = 'none';
+    }
+
+    function selectOption(selected, correct) {
+      const options = document.querySelectorAll('.quiz-option');
+      options.forEach((opt, i) => {
+        if (i === correct) {
+          opt.classList.add('correct');
+        } else if (i === selected && i !== correct) {
+          opt.classList.add('wrong');
+        }
+        opt.disabled = true; // Prevent multiple clicks
+      });
+      if (selected === correct) {
+        quizScore++;
+      }
+      document.getElementById('next-question-btn').style.display = 'block';
+    }
+
+    function nextQuestion() {
+      currentQuestion++;
+      showQuestion();
+    }
+
+    function endQuiz() {
+      launchConfetti();
+      const percentage = (quizScore / quizQuestions.length) * 100;
+      document.getElementById('quiz-question').style.display = 'none';
+      document.getElementById('quiz-options').style.display = 'none';
+      document.getElementById('next-question-btn').style.display = 'none';
+      document.getElementById('quiz-progress').textContent = `Quiz Complete! Score: ${quizScore}/${quizQuestions.length} (${percentage}%)`;
+      if (percentage >= 60) { // Easy threshold
+        document.getElementById('quiz-complete').innerHTML = `
+          <h3 class="text-2xl font-bold text-green-600 mb-4">Amazing! You Passed! 🎉</h3>
+          <p class="text-lg mb-4">Unlocking global wishes now... 🌍✨</p>
+          <button onclick="showWishes()" class="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600">Reveal Wishes! 🎁</button>
+        `;
+        document.getElementById('quiz-complete').style.display = 'block';
+      } else {
+        document.getElementById('quiz-complete').innerHTML = `
+          <h3 class="text-xl font-bold text-yellow-600 mb-4">Close! Try Again? 😊</h3>
+          <p class="text-lg mb-4">Score too low for wishes. But you're still awesome!</p>
+          <button onclick="startQuiz()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Retry Quiz!</button>
+        `;
+        document.getElementById('quiz-complete').style.display = 'block';
+      }
+    }
+
+    function showWishes() {
+      document.getElementById('quiz-container').style.display = 'none';
+      document.getElementById('wishes-container').style.display = 'block';
+      const grid = document.getElementById('wishes-grid');
+      grid.innerHTML = '';
+      multilingualWishes.forEach((wish, index) => {
+        const card = document.createElement('div');
+        card.className = 'wish-card';
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.innerHTML = `
+          <div class="language-name">${wish.lang}</div>
+          <div class="wish-text">${wish.wish}</div>
+        `;
+        // Add sparkle on hover
+        card.onmouseenter = () => {
+          for (let i = 0; i < 5; i++) {
+            setTimeout(() => {
+              const sparkle = document.createElement('div');
+              sparkle.className = 'sparkle';
+              sparkle.style.left = Math.random() * 100 + '%';
+              sparkle.style.top = Math.random() * 100 + '%';
+              card.appendChild(sparkle);
+              setTimeout(() => sparkle.remove(), 2000);
+            }, i * 200);
+          }
+          launchConfetti({ particleCount: 50, spread: 360, origin: { x: 0.5, y: 0.5 } });
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    document.getElementById('party-btn').addEventListener('click', () => {
+      launchConfetti();
+      document.getElementById('main-card').style.display = 'none';
+      document.getElementById('game-container').style.display = 'block';
+      initGame();
+    });
+
+    window.onload = () => {
+      launchConfetti();
+      createHearts();
+    };
+  </script>
+</body>
+</html>
